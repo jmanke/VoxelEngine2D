@@ -1,0 +1,22 @@
+{
+    "voxels": [
+        {
+            "id": 0,
+            "name": "Air",
+            "Empty": true,
+            "SpriteCoord": [0, 0]
+        },
+        {
+            "id": 1,
+            "name": "Dirt",
+            "hardness": 1,
+            "SpriteCoord": [0, 0]
+        },
+        {
+            "id": 2,
+            "name": "Stone",
+            "hardness": 2,
+            "SpriteCoord": [0, 0]
+        }
+    ]
+}

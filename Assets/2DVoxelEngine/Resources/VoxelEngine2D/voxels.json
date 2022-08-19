@@ -1,0 +1,23 @@
+
+[
+    {
+        "Id": 0,
+        "Name": "Air",
+        "Empty": true,
+        "SpriteCoord": [0, 0]
+    },
+    {
+        "Id": 1,
+        "Name": "Dirt",
+        "Hardness": 1,
+        "HitPoints": 10,
+        "SpriteCoord": [2, 15]
+    },
+    {
+        "Id": 2,
+        "Name": "Stone",
+        "Hardness": 2,
+        "HitPoints": 20,
+        "SpriteCoord": [1, 1]
+    }
+]
