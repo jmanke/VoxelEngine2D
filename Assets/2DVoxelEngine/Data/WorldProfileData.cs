@@ -1,7 +1,7 @@
-namespace Hazel.VoxelEngine.Data
+namespace Hazel.VoxelEngine2D.Data
 {
     [System.Serializable]
-    public class TerrainProfileData
+    public class WorldProfileData
     {
         /// <summary>
         /// Measured in chunks

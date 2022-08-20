@@ -1,16 +1,18 @@
 using UnityEngine;
 using Newtonsoft.Json;
 using System.Linq;
-using Hazel.VoxelEngine.Data;
-using Hazel.VoxelEngine.Unity;
+using Hazel.VoxelEngine2D.Data;
+using Hazel.VoxelEngine2D.Unity;
 
-namespace Hazel.VoxelEngine
+namespace Hazel.VoxelEngine2D
 {
     /// <summary>
     /// Entry point for the 2D voxel engine
     /// </summary>
-    public class VoxelEngine2D : MonoBehaviour
+    public class VoxelEngine : MonoBehaviour
     {
+        public static VoxelEngine Instance { get; private set; }
+
         [Tooltip("Path to voxel json definition in a Resources folder")]
         public string voxelAssetPath = "VoxelEngine2D/voxels";
 
@@ -24,42 +26,50 @@ namespace Hazel.VoxelEngine
         // sparse array of definitions for voxels
         public static Voxel[] VoxelDefinitions { get; private set; }
 
-        public static float TileSize { get; } = 0.0625f;
+        public float TileSize { get; private set; } = 0.0625f;
 
-        public static int ChunkSize;
+        public int ChunkSize { get; private set; }
 
-        private static FlatArray2D<Chunk> chunks;
-        private static TerrainProfileData terrainProfile;
+        private FlatArray2D<Chunk> chunks;
+        private WorldProfileData worldProfile;
 
         public void Awake()
         {
-            terrainProfile = new TerrainProfileData();
-            ChunkSize = terrainProfile.ChunkSize;
+            if (Instance != null)
+            {
+                Destroy(this.gameObject);
+                return;
+            }
+
+            Instance = this;
+            DontDestroyOnLoad(this.gameObject);
+            this.worldProfile = new WorldProfileData();
+            this.ChunkSize = this.worldProfile.ChunkSize;
             this.LoadVoxelDefinitions();
         }
 
         public void Start()
         {
-            chunks = new FlatArray2D<Chunk>(terrainProfile.WorldWidth, terrainProfile.WorldHeight);
+            this.chunks = new FlatArray2D<Chunk>(worldProfile.WorldWidth, worldProfile.WorldHeight);
 
-            for (int i = 0; i < terrainProfile.WorldWidth; i++)
+            for (int i = 0; i < this.worldProfile.WorldWidth; i++)
             {
-                for (int j = 0; j < terrainProfile.WorldHeight; j++)
+                for (int j = 0; j < this.worldProfile.WorldHeight; j++)
                 {
-                    var pos = new Vector2Int(i * terrainProfile.ChunkSize, j * terrainProfile.ChunkSize);
+                    var pos = new Vector2Int(i * this.worldProfile.ChunkSize, j * this.worldProfile.ChunkSize);
                     var chunk = new Chunk(this.material, pos);
 
                     chunk.Update();
 
-                    chunks.Set(i, j, chunk);
+                    this.chunks.Set(i, j, chunk);
                 }
             }
         }
 
-        public static void UpdateChunk(Vector2 position)
+        public void UpdateChunk(Vector2 position)
         {
-            var coord = new Vector2Int((int)position.x / terrainProfile.ChunkSize, (int)position.y / terrainProfile.ChunkSize);
-            var chunk = chunks.Get(coord.x, coord.y);
+            var coord = new Vector2Int((int)position.x / this.worldProfile.ChunkSize, (int)position.y / this.worldProfile.ChunkSize);
+            var chunk = this.chunks.Get(coord.x, coord.y);
             chunk.Update();
         }
 
@@ -68,35 +78,35 @@ namespace Hazel.VoxelEngine
         /// </summary>
         /// <param name="coord">Coordinate of the voxel</param>
         /// <param name="voxel">Voxel to set at coordinate</param>
-        public static void UpdateVoxel(Vector2Int coord, Voxel voxel)
+        public void UpdateVoxel(Vector2Int coord, Voxel voxel)
         {
-            TerrainBuilder.SetVoxel(coord.x, coord.y, voxel);
-            UpdateChunk(new Vector2(coord.x, coord.y));
+            Voxels.Set(coord.x, coord.y, voxel);
+            this.UpdateChunk(new Vector2(coord.x, coord.y));
 
             // check if a neighbour chunk also needs to be updated
-            int chunkX = coord.x % terrainProfile.ChunkSize;
-            int chunkY = coord.y % terrainProfile.ChunkSize;
+            int chunkX = coord.x % this.worldProfile.ChunkSize;
+            int chunkY = coord.y % this.worldProfile.ChunkSize;
 
             // left
             if (chunkX == 0)
             {
-                UpdateChunk(new Vector2(coord.x - 1, coord.y));
+                this.UpdateChunk(new Vector2(coord.x - 1, coord.y));
             }
             // right
-            else if (chunkX == terrainProfile.ChunkSize - 1)
+            else if (chunkX == worldProfile.ChunkSize - 1)
             {
-                UpdateChunk(new Vector2(coord.x + 1, coord.y));
+                this.UpdateChunk(new Vector2(coord.x + 1, coord.y));
             }
 
             // bottom
             if (chunkY == 0)
             {
-                UpdateChunk(new Vector2(coord.x, coord.y - 1));
+                this.UpdateChunk(new Vector2(coord.x, coord.y - 1));
             }
             // top
-            else if (chunkY == terrainProfile.ChunkSize - 1)
+            else if (chunkY == worldProfile.ChunkSize - 1)
             {
-                UpdateChunk(new Vector2(coord.x, coord.y + 1));
+                this.UpdateChunk(new Vector2(coord.x, coord.y + 1));
             }
         }
 
