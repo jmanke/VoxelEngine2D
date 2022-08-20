@@ -6,30 +6,37 @@ namespace Hazel.VoxelEngine.Unity
 {
     public class Chunk
     {
-        public ChunkData ChunkData { get; private set; }
+        private GameObject gameObject;
+        private CustomCollider2D collider;
+        private Rigidbody2D rigidbody;
+        private MeshRenderer meshRenderer;
+        private MeshFilter meshFilter;
+        private Vector2Int position;
 
-        private GameObject renderObject;
-
-        public Chunk(ChunkData chunkData)
+        public Chunk(Material mat, Vector2Int position)
         {
-            this.ChunkData = chunkData;
+            this.gameObject = new GameObject("Mesh");
+            this.SetPosition(position);
+            this.meshRenderer = this.gameObject.AddComponent<MeshRenderer>();
+            this.meshRenderer.material = mat;
+            this.meshFilter = this.gameObject.AddComponent<MeshFilter>();
+            this.meshFilter.mesh = new Mesh();
+            this.position = position;
         }
 
-        public void Load(Vector2Int pos, Material mat)
+        public void Update()
         {
             var verticies = new List<Vector3>();
             var uvs = new List<Vector2>();
-
             var triangles = new List<int>();
+            var physicsShapeGroup = new PhysicsShapeGroup2D();
             int v = 0;
 
-            var physicsShapeGroup = new PhysicsShapeGroup2D();
-
-            for (int x = 0; x < this.ChunkData.SizeX; x++)
+            for (int x = 0; x < VoxelEngine2D.ChunkSize; x++)
             {
-                for (int y = 0; y < this.ChunkData.SizeY; y++)
+                for (int y = 0; y < VoxelEngine2D.ChunkSize; y++)
                 {
-                    var voxel = VoxelEngine2D.VoxelDefinitions[this.ChunkData.Voxels.Get(x, y).Id];
+                    var voxel = VoxelEngine2D.VoxelDefinitions[TerrainBuilder.VoxelAt(this.position.x + x, this.position.y + y).Id];
                     if (voxel.Empty)
                     {
                         continue;
@@ -59,7 +66,7 @@ namespace Hazel.VoxelEngine.Unity
                     triangles.Add(v + 2);
                     triangles.Add(v + 3);
 
-                    var tilePos = new Vector2Int(pos.x + x, pos.y + y);
+                    var tilePos = new Vector2Int(this.position.x + x, this.position.y + y);
 
                     if (TerrainBuilder.VoxelAt(tilePos.x - 1, tilePos.y).Id == 0 ||
                         TerrainBuilder.VoxelAt(tilePos.x + 1, tilePos.y).Id == 0 || 
@@ -73,28 +80,35 @@ namespace Hazel.VoxelEngine.Unity
                 }
             }
 
-            var mesh = new Mesh
-            {
-                vertices = verticies.ToArray(),
-                triangles = triangles.ToArray(),
-                uv = uvs.ToArray(),
-            };
+            // construct mesh
+            var mesh = this.meshFilter.mesh;
+            mesh.Clear();
+            mesh.vertices = verticies.ToArray();
+            mesh.triangles = triangles.ToArray();
+            mesh.uv = uvs.ToArray();
 
-            var obj = new GameObject("Mesh");
-            var meshRenderer = obj.AddComponent<MeshRenderer>();
-            meshRenderer.material = mat;
-            var meshFilter = obj.AddComponent<MeshFilter>();
-            meshFilter.mesh = mesh;
-
+            // add or remove collider
             if (physicsShapeGroup.shapeCount > 0)
             {
-                var rb = obj.AddComponent<Rigidbody2D>();
-                rb.bodyType = RigidbodyType2D.Static;
-                var collider = obj.AddComponent<CustomCollider2D>();
-                collider.SetCustomShapes(physicsShapeGroup);
-            }
+                if (this.collider == null)
+                {
+                    this.rigidbody = this.gameObject.AddComponent<Rigidbody2D>();
+                    this.rigidbody.bodyType = RigidbodyType2D.Static;
+                    this.collider = this.gameObject.AddComponent<CustomCollider2D>();
+                }
 
-            this.renderObject = obj;
+                this.collider.SetCustomShapes(physicsShapeGroup);
+            } 
+            else
+            {
+                if (this.collider != null)
+                {
+                    Object.Destroy(this.rigidbody);
+                    Object.Destroy(this.collider);
+                    this.collider = null;
+                    this.rigidbody = null;
+                }
+            }
         }
 
         public void Unload()
@@ -104,7 +118,7 @@ namespace Hazel.VoxelEngine.Unity
 
         public void SetPosition(Vector2 position)
         {
-            this.renderObject.transform.position = position;
+            this.gameObject.transform.position = position;
         }
     }
 }

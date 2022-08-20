@@ -19,10 +19,6 @@ namespace Hazel.VoxelEngine
         [Tooltip("Tile sheet for voxels")]
         public Sprite tileSheet;
 
-        [Header("Chunks")]
-
-        public int chuckSize = 32;
-
         public Material material;
 
         // sparse array of definitions for voxels
@@ -30,38 +26,77 @@ namespace Hazel.VoxelEngine
 
         public static float TileSize { get; } = 0.0625f;
 
+        public static int ChunkSize;
+
+        private static FlatArray2D<Chunk> chunks;
+        private static TerrainProfileData terrainProfile;
+
         public void Awake()
         {
+            terrainProfile = new TerrainProfileData();
+            ChunkSize = terrainProfile.ChunkSize;
             this.LoadVoxelDefinitions();
         }
 
         public void Start()
         {
-            var terrainProfile = new TerrainProfileData();
+            chunks = new FlatArray2D<Chunk>(terrainProfile.WorldWidth, terrainProfile.WorldHeight);
 
             for (int i = 0; i < terrainProfile.WorldWidth; i++)
             {
                 for (int j = 0; j < terrainProfile.WorldHeight; j++)
                 {
-                    var chunkData = new ChunkData(terrainProfile.ChunkSize, terrainProfile.ChunkSize);
-                    for (int k = 0; k < chunkData.Voxels.Width; k++)
-                    {
-                        for (int l = 0; l < chunkData.Voxels.Height; l++)
-                        {
-                            chunkData.Voxels.Set(k, l, new VoxelData
-                            {
-                                Id = TerrainBuilder.VoxelAt(i * terrainProfile.ChunkSize + k, j * terrainProfile.ChunkSize + l).Id,
-                                CurrentHitPoints = 0
-                            });
-                        }
-                    }
-
-                    var chunk = new Chunk(chunkData);
-
                     var pos = new Vector2Int(i * terrainProfile.ChunkSize, j * terrainProfile.ChunkSize);
-                    chunk.Load(pos, material);
-                    chunk.SetPosition(pos);
+                    var chunk = new Chunk(this.material, pos);
+
+                    chunk.Update();
+
+                    chunks.Set(i, j, chunk);
                 }
+            }
+        }
+
+        public static void UpdateChunk(Vector2 position)
+        {
+            var coord = new Vector2Int((int)position.x / terrainProfile.ChunkSize, (int)position.y / terrainProfile.ChunkSize);
+            var chunk = chunks.Get(coord.x, coord.y);
+            chunk.Update();
+        }
+
+        /// <summary>
+        /// Updates a voxel at the given coordinate. This will also update necessary chunks
+        /// </summary>
+        /// <param name="coord">Coordinate of the voxel</param>
+        /// <param name="voxel">Voxel to set at coordinate</param>
+        public static void UpdateVoxel(Vector2Int coord, Voxel voxel)
+        {
+            TerrainBuilder.SetVoxel(coord.x, coord.y, voxel);
+            UpdateChunk(new Vector2(coord.x, coord.y));
+
+            // check if a neighbour chunk also needs to be updated
+            int chunkX = coord.x % terrainProfile.ChunkSize;
+            int chunkY = coord.y % terrainProfile.ChunkSize;
+
+            // left
+            if (chunkX == 0)
+            {
+                UpdateChunk(new Vector2(coord.x - 1, coord.y));
+            }
+            // right
+            else if (chunkX == terrainProfile.ChunkSize - 1)
+            {
+                UpdateChunk(new Vector2(coord.x + 1, coord.y));
+            }
+
+            // bottom
+            if (chunkY == 0)
+            {
+                UpdateChunk(new Vector2(coord.x, coord.y - 1));
+            }
+            // top
+            else if (chunkY == terrainProfile.ChunkSize - 1)
+            {
+                UpdateChunk(new Vector2(coord.x, coord.y + 1));
             }
         }
 

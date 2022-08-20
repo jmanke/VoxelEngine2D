@@ -62,7 +62,7 @@ namespace Hazel
         /// <returns>Value</returns>
         public T Get(int x, int y)
         {
-            return this.array[x * this.Width + y];
+            return this.array[x * this.Height + y];
         }
 
         /// <summary>
@@ -73,7 +73,7 @@ namespace Hazel
         /// <param name="val">value to set</param>
         public void Set(int x, int y, T val)
         {
-            this.array[x * this.Width + y] = val;
+            this.array[x * this.Height + y] = val;
         }
     }
 }
