@@ -1,6 +1,8 @@
 using UnityEngine;
 using Newtonsoft.Json;
 using System.Linq;
+using Hazel.VoxelEngine.Data;
+using Hazel.VoxelEngine.Unity;
 
 namespace Hazel.VoxelEngine
 {
@@ -35,18 +37,20 @@ namespace Hazel.VoxelEngine
 
         public void Start()
         {
-            for (int i = 0; i < 4; i++)
+            var terrainProfile = new TerrainProfileData();
+
+            for (int i = 0; i < terrainProfile.WorldWidth; i++)
             {
-                for (int j = 0; j < 4; j++)
+                for (int j = 0; j < terrainProfile.WorldHeight; j++)
                 {
-                    var chunkData = new ChunkData(8, 8);
+                    var chunkData = new ChunkData(terrainProfile.ChunkSize, terrainProfile.ChunkSize);
                     for (int k = 0; k < chunkData.Voxels.Width; k++)
                     {
-                        for (int l = 0; l < chunkData.Voxels.Width; l++)
+                        for (int l = 0; l < chunkData.Voxels.Height; l++)
                         {
                             chunkData.Voxels.Set(k, l, new VoxelData
                             {
-                                Id = Random.Range(0, 3),
+                                Id = TerrainBuilder.VoxelAt(i * terrainProfile.ChunkSize + k, j * terrainProfile.ChunkSize + l).Id,
                                 CurrentHitPoints = 0
                             });
                         }
@@ -54,8 +58,9 @@ namespace Hazel.VoxelEngine
 
                     var chunk = new Chunk(chunkData);
 
-                    chunk.Load(material);
-                    chunk.SetPosition(new Vector2(i * 8, j * 8));
+                    var pos = new Vector2Int(i * terrainProfile.ChunkSize, j * terrainProfile.ChunkSize);
+                    chunk.Load(pos, material);
+                    chunk.SetPosition(pos);
                 }
             }
         }

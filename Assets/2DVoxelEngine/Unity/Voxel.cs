@@ -1,6 +1,4 @@
-using UnityEngine;
-
-namespace Hazel.VoxelEngine
+namespace Hazel.VoxelEngine.Unity
 {
     [System.Serializable]
     public class Voxel

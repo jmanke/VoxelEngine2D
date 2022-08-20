@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Hazel.VoxelEngine.Data;
 
-namespace Hazel.VoxelEngine
+namespace Hazel.VoxelEngine.Unity
 {
     public class Chunk
     {
@@ -14,13 +15,15 @@ namespace Hazel.VoxelEngine
             this.ChunkData = chunkData;
         }
 
-        public void Load(Material mat)
+        public void Load(Vector2Int pos, Material mat)
         {
             var verticies = new List<Vector3>();
             var uvs = new List<Vector2>();
 
             var triangles = new List<int>();
             int v = 0;
+
+            var physicsShapeGroup = new PhysicsShapeGroup2D();
 
             for (int x = 0; x < this.ChunkData.SizeX; x++)
             {
@@ -31,6 +34,8 @@ namespace Hazel.VoxelEngine
                     {
                         continue;
                     }
+
+                    // build tile
 
                     // add verticies
                     verticies.Add(new Vector3(x, y));
@@ -54,6 +59,16 @@ namespace Hazel.VoxelEngine
                     triangles.Add(v + 2);
                     triangles.Add(v + 3);
 
+                    var tilePos = new Vector2Int(pos.x + x, pos.y + y);
+
+                    if (TerrainBuilder.VoxelAt(tilePos.x - 1, tilePos.y).Id == 0 ||
+                        TerrainBuilder.VoxelAt(tilePos.x + 1, tilePos.y).Id == 0 || 
+                        TerrainBuilder.VoxelAt(tilePos.x, tilePos.y - 1).Id == 0 ||
+                        TerrainBuilder.VoxelAt(tilePos.x, tilePos.y + 1).Id == 0)
+                    {
+                        physicsShapeGroup.AddBox(new Vector2(x + 0.5f, y + 0.5f), new Vector2(1, 1));
+                    }
+
                     v += 4;
                 }
             }
@@ -70,6 +85,14 @@ namespace Hazel.VoxelEngine
             meshRenderer.material = mat;
             var meshFilter = obj.AddComponent<MeshFilter>();
             meshFilter.mesh = mesh;
+
+            if (physicsShapeGroup.shapeCount > 0)
+            {
+                var rb = obj.AddComponent<Rigidbody2D>();
+                rb.bodyType = RigidbodyType2D.Static;
+                var collider = obj.AddComponent<CustomCollider2D>();
+                collider.SetCustomShapes(physicsShapeGroup);
+            }
 
             this.renderObject = obj;
         }

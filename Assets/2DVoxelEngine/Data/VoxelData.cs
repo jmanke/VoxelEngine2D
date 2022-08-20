@@ -1,4 +1,4 @@
-namespace Hazel.VoxelEngine
+namespace Hazel.VoxelEngine.Data
 {
     [System.Serializable]
     public struct VoxelData

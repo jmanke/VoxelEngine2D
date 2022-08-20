@@ -1,4 +1,4 @@
-namespace Hazel.VoxelEngine
+namespace Hazel.VoxelEngine.Data
 {
     public class ChunkData
     {
