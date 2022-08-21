@@ -32,6 +32,7 @@ namespace Hazel.VoxelEngine2D
 
         private FlatArray2D<Chunk> chunks;
         private WorldProfileData worldProfile;
+        private Voxels voxels;
 
         public void Awake()
         {
@@ -46,6 +47,7 @@ namespace Hazel.VoxelEngine2D
             this.worldProfile = new WorldProfileData();
             this.ChunkSize = this.worldProfile.ChunkSize;
             this.LoadVoxelDefinitions();
+            this.voxels = new Voxels(this.ChunkSize, this.material);
         }
 
         public void Start()
@@ -56,19 +58,21 @@ namespace Hazel.VoxelEngine2D
             {
                 for (int j = 0; j < this.worldProfile.WorldHeight; j++)
                 {
-                    var pos = new Vector2Int(i * this.worldProfile.ChunkSize, j * this.worldProfile.ChunkSize);
-                    var chunk = new Chunk(this.material, pos);
+                    var chunk = new Chunk(this.material, new Vector2Int(i, j));
 
                     chunk.Update();
-
                     this.chunks.Set(i, j, chunk);
                 }
             }
         }
 
+        /// <summary>
+        /// Updates chunk at world position
+        /// </summary>
+        /// <param name="position">world position</param>
         public void UpdateChunk(Vector2 position)
         {
-            var coord = new Vector2Int((int)position.x / this.worldProfile.ChunkSize, (int)position.y / this.worldProfile.ChunkSize);
+            var coord = new Vector2Int((int)position.x / this.ChunkSize, (int)position.y / this.ChunkSize);
             var chunk = this.chunks.Get(coord.x, coord.y);
             chunk.Update();
         }
@@ -80,7 +84,7 @@ namespace Hazel.VoxelEngine2D
         /// <param name="voxel">Voxel to set at coordinate</param>
         public void UpdateVoxel(Vector2Int coord, Voxel voxel)
         {
-            Voxels.Set(coord.x, coord.y, voxel);
+            this.voxels.Set(coord.x, coord.y, voxel);
             this.UpdateChunk(new Vector2(coord.x, coord.y));
 
             // check if a neighbour chunk also needs to be updated
@@ -133,6 +137,28 @@ namespace Hazel.VoxelEngine2D
             {
                 VoxelDefinitions[voxel.Id] = voxel;
             }
+        }
+
+        /// <summary>
+        /// Gets a voxel from a coordinate
+        /// </summary>
+        /// <param name="x">x coordinate</param>
+        /// <param name="y">y coordinate</param>
+        /// <returns></returns>
+        public Voxel VoxelAt(int x, int y)
+        {
+            return this.voxels.At(x, y);
+        }
+
+        /// <summary>
+        /// Sets voxel at coordinate
+        /// </summary>
+        /// <param name="x">x coordinate</param>
+        /// <param name="y">y coordinate</param>
+        /// <param name="voxel">Voxel to set</param>
+        public void SetVoxel(int x, int y, Voxel voxel)
+        {
+            this.voxels.Set(x, y, voxel);
         }
     }
 }

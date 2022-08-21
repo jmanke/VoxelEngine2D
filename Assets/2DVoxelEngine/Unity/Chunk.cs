@@ -5,7 +5,16 @@ namespace Hazel.VoxelEngine2D.Unity
 {
     public class Chunk
     {
-        private readonly Vector2Int position;
+        public readonly Vector2Int Coord;
+
+        public Vector2 WorldPosition
+        {
+            get
+            {
+                return this.Coord * VoxelEngine.Instance.ChunkSize;
+            }
+        }
+
         private readonly Material material;
         private GameObject gameObject;
         private CustomCollider2D collider;
@@ -13,12 +22,15 @@ namespace Hazel.VoxelEngine2D.Unity
         private MeshRenderer meshRenderer;
         private MeshFilter meshFilter;
 
-        public Chunk(Material material, Vector2Int position)
+        public Chunk(Material material, Vector2Int coord)
         {
             this.material = material;
-            this.position = position;
+            this.Coord = coord;
         }
 
+        /// <summary>
+        /// Updates the chunk with current voxel information
+        /// </summary>
         public void Update()
         {
             if (this.gameObject == null)
@@ -39,7 +51,7 @@ namespace Hazel.VoxelEngine2D.Unity
             {
                 for (int y = 0; y < chunkSize; y++)
                 {
-                    var voxel = VoxelEngine.VoxelDefinitions[Voxels.At(this.position.x + x, this.position.y + y).Id];
+                    var voxel = VoxelEngine.Instance.VoxelAt((int)this.WorldPosition.x + x, (int)this.WorldPosition.y + y);
                     if (voxel.Empty)
                     {
                         continue;
@@ -69,12 +81,12 @@ namespace Hazel.VoxelEngine2D.Unity
                     triangles.Add(v + 2);
                     triangles.Add(v + 3);
 
-                    var tilePos = new Vector2Int(this.position.x + x, this.position.y + y);
+                    var tilePos = new Vector2Int((int)this.WorldPosition.x + x, (int)this.WorldPosition.y + y);
 
-                    if (Voxels.At(tilePos.x - 1, tilePos.y).Id == 0 ||
-                        Voxels.At(tilePos.x + 1, tilePos.y).Id == 0 || 
-                        Voxels.At(tilePos.x, tilePos.y - 1).Id == 0 ||
-                        Voxels.At(tilePos.x, tilePos.y + 1).Id == 0)
+                    if (VoxelEngine.Instance.VoxelAt(tilePos.x - 1, tilePos.y).Empty ||
+                        VoxelEngine.Instance.VoxelAt(tilePos.x + 1, tilePos.y).Empty ||
+                        VoxelEngine.Instance.VoxelAt(tilePos.x, tilePos.y - 1).Empty ||
+                        VoxelEngine.Instance.VoxelAt(tilePos.x, tilePos.y + 1).Empty)
                     {
                         physicsShapeGroup.AddBox(new Vector2(x + 0.5f, y + 0.5f), new Vector2(1, 1));
                     }
@@ -101,7 +113,7 @@ namespace Hazel.VoxelEngine2D.Unity
                 }
 
                 this.collider.SetCustomShapes(physicsShapeGroup);
-            } 
+            }
             else
             {
                 if (this.collider != null)
@@ -114,6 +126,9 @@ namespace Hazel.VoxelEngine2D.Unity
             }
         }
 
+        /// <summary>
+        /// Unloads gameobject
+        /// </summary>
         public void Unload()
         {
             Object.Destroy(this.gameObject);
@@ -124,16 +139,11 @@ namespace Hazel.VoxelEngine2D.Unity
             meshFilter = null;
         }
 
-        public void SetPosition(Vector2 position)
-        {
-            this.gameObject.transform.position = position;
-        }
-
         private void BuildGameObject()
         {
             int chunkSize = VoxelEngine.Instance.ChunkSize;
-            this.gameObject = new GameObject($"Chunk_{this.position.x / chunkSize}_{this.position.y / chunkSize}");
-            this.SetPosition(position);
+            this.gameObject = new GameObject($"Chunk_{this.Coord.x / chunkSize}_{this.Coord.y / chunkSize}");
+            this.gameObject.transform.position = this.WorldPosition;
             this.meshRenderer = this.gameObject.AddComponent<MeshRenderer>();
             this.meshRenderer.material = this.material;
             this.meshFilter = this.gameObject.AddComponent<MeshFilter>();
