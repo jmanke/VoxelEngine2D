@@ -17,6 +17,6 @@ namespace Hazel.VoxelEngine2D.Data
         /// <summary>
         /// Measured in tiles
         /// </summary>
-        public int ChunkSize { get; set; } = 16;
+        public int ChunkSize { get; set; } = 32;
     }
 }

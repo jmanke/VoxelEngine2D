@@ -53,11 +53,11 @@ namespace Hazel.VoxelEngine2D
         public void UpdateExtent(Vector2 center, Vector2 size)
         {
             int radiusX = (int)size.x / 2;
-            int right = (int)center.x + radiusX;
+            int right = (int)center.x + radiusX + this.chunkSize;
             int left = (int)center.x - radiusX;
 
             int radiusY = (int)size.y / 2;
-            int top = (int)center.y - radiusY;
+            int top = (int)center.y + radiusY + this.chunkSize;
             int bottom = (int)center.y - radiusY;
 
             var chunksToUnload = new List<Chunk>();
@@ -67,7 +67,7 @@ namespace Hazel.VoxelEngine2D
             {
                 var chunkPos = keyVal.Value.WorldPosition;
 
-                if (chunkPos.x < left || chunkPos.x > right + this.chunkSize || chunkPos.y > top + this.chunkSize || chunkPos.y < bottom)
+                if (chunkPos.x < left || chunkPos.x > right || chunkPos.y > top || chunkPos.y < bottom)
                 {
                     chunksToUnload.Add(keyVal.Value);
                 }
@@ -103,6 +103,56 @@ namespace Hazel.VoxelEngine2D
                 var chunk = new Chunk(this.material, coord);
                 chunk.Update();
                 this.chunks.Add(coord, chunk);
+            }
+        }
+
+        /// <summary>
+        /// Updates chunk at world position
+        /// </summary>
+        /// <param name="position">world position</param>
+        public void UpdateChunk(Vector2 position)
+        {
+            var coord = new Vector2Int((int)position.x / this.chunkSize, (int)position.y / this.chunkSize);
+            if (this.chunks.TryGetValue(coord, out var chunk))
+            {
+                chunk.Update();
+            }
+        }
+
+        /// <summary>
+        /// Updates a voxel at the given coordinate. This will also update necessary chunks
+        /// </summary>
+        /// <param name="coord">Coordinate of the voxel</param>
+        /// <param name="voxel">Voxel to set at coordinate</param>
+        public void UpdateVoxel(Vector2Int coord, Voxel voxel)
+        {
+            this.Set(coord.x, coord.y, voxel);
+            this.UpdateChunk(new Vector2(coord.x, coord.y));
+
+            // check if a neighbour chunk also needs to be updated
+            int chunkX = coord.x % this.chunkSize;
+            int chunkY = coord.y % this.chunkSize;
+
+            // left
+            if (chunkX == 0)
+            {
+                this.UpdateChunk(new Vector2(coord.x - 1, coord.y));
+            }
+            // right
+            else if (chunkX == this.chunkSize - 1)
+            {
+                this.UpdateChunk(new Vector2(coord.x + 1, coord.y));
+            }
+
+            // bottom
+            if (chunkY == 0)
+            {
+                this.UpdateChunk(new Vector2(coord.x, coord.y - 1));
+            }
+            // top
+            else if (chunkY == this.chunkSize - 1)
+            {
+                this.UpdateChunk(new Vector2(coord.x, coord.y + 1));
             }
         }
     }

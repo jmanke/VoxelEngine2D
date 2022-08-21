@@ -155,6 +155,7 @@ MonoBehaviour:
   voxelAssetPath: VoxelEngine2D/voxels
   tileSheet: {fileID: 21300000, guid: 33ff6affb923b79479c99780f259c8ce, type: 3}
   material: {fileID: 2100000, guid: 48ba32e08c9ea90449d2ca9dd1d771ed, type: 2}
+  extentTransform: {fileID: 519420032}
 --- !u!4 &218506387
 Transform:
   m_ObjectHideFlags: 0

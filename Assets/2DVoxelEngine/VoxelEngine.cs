@@ -30,9 +30,14 @@ namespace Hazel.VoxelEngine2D
 
         public int ChunkSize { get; private set; }
 
-        private FlatArray2D<Chunk> chunks;
         private WorldProfileData worldProfile;
         private Voxels voxels;
+
+        /// <summary>
+        /// Transform that the extent is based on
+        /// </summary>
+        public Transform extentTransform;
+        private Vector2 lastExtentPosition;
 
         public void Awake()
         {
@@ -52,18 +57,13 @@ namespace Hazel.VoxelEngine2D
 
         public void Start()
         {
-            this.chunks = new FlatArray2D<Chunk>(worldProfile.WorldWidth, worldProfile.WorldHeight);
+            this.UpdateExtent();
+        }
 
-            for (int i = 0; i < this.worldProfile.WorldWidth; i++)
-            {
-                for (int j = 0; j < this.worldProfile.WorldHeight; j++)
-                {
-                    var chunk = new Chunk(this.material, new Vector2Int(i, j));
-
-                    chunk.Update();
-                    this.chunks.Set(i, j, chunk);
-                }
-            }
+        public void UpdateExtent()
+        {
+            this.lastExtentPosition = this.extentTransform.position;
+            this.voxels.UpdateExtent(this.lastExtentPosition, new Vector2(350f, 350f));
         }
 
         /// <summary>
@@ -72,9 +72,7 @@ namespace Hazel.VoxelEngine2D
         /// <param name="position">world position</param>
         public void UpdateChunk(Vector2 position)
         {
-            var coord = new Vector2Int((int)position.x / this.ChunkSize, (int)position.y / this.ChunkSize);
-            var chunk = this.chunks.Get(coord.x, coord.y);
-            chunk.Update();
+            this.voxels.UpdateChunk(position);
         }
 
         /// <summary>
@@ -84,34 +82,7 @@ namespace Hazel.VoxelEngine2D
         /// <param name="voxel">Voxel to set at coordinate</param>
         public void UpdateVoxel(Vector2Int coord, Voxel voxel)
         {
-            this.voxels.Set(coord.x, coord.y, voxel);
-            this.UpdateChunk(new Vector2(coord.x, coord.y));
-
-            // check if a neighbour chunk also needs to be updated
-            int chunkX = coord.x % this.worldProfile.ChunkSize;
-            int chunkY = coord.y % this.worldProfile.ChunkSize;
-
-            // left
-            if (chunkX == 0)
-            {
-                this.UpdateChunk(new Vector2(coord.x - 1, coord.y));
-            }
-            // right
-            else if (chunkX == worldProfile.ChunkSize - 1)
-            {
-                this.UpdateChunk(new Vector2(coord.x + 1, coord.y));
-            }
-
-            // bottom
-            if (chunkY == 0)
-            {
-                this.UpdateChunk(new Vector2(coord.x, coord.y - 1));
-            }
-            // top
-            else if (chunkY == worldProfile.ChunkSize - 1)
-            {
-                this.UpdateChunk(new Vector2(coord.x, coord.y + 1));
-            }
+            this.voxels.UpdateVoxel(coord, voxel);
         }
 
         /// <summary>
@@ -159,6 +130,14 @@ namespace Hazel.VoxelEngine2D
         public void SetVoxel(int x, int y, Voxel voxel)
         {
             this.voxels.Set(x, y, voxel);
+        }
+
+        private void FixedUpdate()
+        {
+            if (Vector2.Distance(this.extentTransform.position, this.lastExtentPosition) > this.ChunkSize)
+            {
+                this.UpdateExtent();
+            }
         }
     }
 }
