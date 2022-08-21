@@ -1,19 +1,14 @@
 namespace Hazel.VoxelEngine2D.Data
 {
+    [System.Serializable]
     public class ChunkData
     {
-        public int SizeX { get; private set; }
+        public VoxelData[] Voxels { get; private set; }
 
-        public int SizeY { get; private set; }
+        public ChunkData(int size) : this(new VoxelData[size * size]) { }
 
-        public FlatArray2D<VoxelData> Voxels { get; private set; }
-
-        public ChunkData(int sizeX, int sizeY) : this(new FlatArray2D<VoxelData>(sizeX, sizeY)) { }
-
-        public ChunkData(FlatArray2D<VoxelData> voxels)
+        public ChunkData(VoxelData[] voxels)
         {
-            this.SizeX = voxels.Width;
-            this.SizeY = voxels.Height;
             this.Voxels = voxels;
         }
     }
