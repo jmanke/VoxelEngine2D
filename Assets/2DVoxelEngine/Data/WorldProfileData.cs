@@ -13,7 +13,6 @@ namespace Hazel.VoxelEngine2D.Data
         /// </summary>
         public int WorldWidth { get; set; } = 16 * 4;
 
-
         /// <summary>
         /// Measured in tiles
         /// </summary>

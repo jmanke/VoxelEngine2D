@@ -139,5 +139,10 @@ namespace Hazel.VoxelEngine2D
                 this.UpdateExtent();
             }
         }
+
+        private void LateUpdate()
+        {
+            this.voxels.Update();
+        }
     }
 }
