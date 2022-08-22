@@ -83,6 +83,8 @@ namespace Hazel.VoxelEngine2D
                 }
             }
 
+            var chunkTasks = new List<Task<Chunk>>();
+
             for (int x = leftCoord; x <= rightCoord; x++)
             {
                 for (int y = bottomCoord; y <= topCoord; y++)
@@ -90,7 +92,7 @@ namespace Hazel.VoxelEngine2D
                     var coord = new Vector2Int(x, y);
                     if (!this.chunks.ContainsKey(coord))
                     {
-                        var chunk = await Task.Run(() =>
+                        var task = Task.Run(() =>
                         {
                             // load chunk
                             string chunkFilename = this.ChunkDataFilename(coord);
@@ -104,11 +106,19 @@ namespace Hazel.VoxelEngine2D
                             return new Chunk(this.material, coord, chunkData);
                         });
 
-                        this.chunks.Add(coord, chunk);
-                        this.chunksToUpdate.Enqueue(chunk);
+                        chunkTasks.Add(task);
                     }
                 }
             }
+
+            // wait for all chunks to load
+            await Task.WhenAll(chunkTasks.ToArray());
+            chunkTasks.ForEach(task => 
+                {
+                    var chunk = task.Result;
+                    this.chunks.Add(chunk.Coord, chunk);
+                    this.chunksToUpdate.Enqueue(chunk);
+                });
         }
 
         private ChunkData GenerateChunkData(Vector2Int coord)

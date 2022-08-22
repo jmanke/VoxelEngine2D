@@ -171,7 +171,7 @@ namespace Hazel.VoxelEngine2D.Unity
         /// <returns>True if voxel is empty or doesn't exist</returns>
         private bool VoxelEmpty(int x, int y, Chunk[] neighbourChunks)
         {
-            if (x > 0 && x < this.ChunkData.Size - 1 && y > 0 && y < this.ChunkData.Size - 1)
+            if (x >= 0 && x < this.ChunkData.Size && y >= 0 && y < this.ChunkData.Size)
             {
                 return VoxelEngine.VoxelDefinitions[this.ChunkData.VoxelAt(x, y).Id].Empty;
             }
