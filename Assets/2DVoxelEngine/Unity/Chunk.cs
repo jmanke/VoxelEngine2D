@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Hazel.VoxelEngine2D.Data;
 using UnityEngine;
 
 namespace Hazel.VoxelEngine2D.Unity
@@ -17,6 +18,8 @@ namespace Hazel.VoxelEngine2D.Unity
             }
         }
 
+        public ChunkData ChunkData { get; private set; }
+
         private readonly Material material;
         private GameObject gameObject;
         private CustomCollider2D collider;
@@ -24,8 +27,9 @@ namespace Hazel.VoxelEngine2D.Unity
         private MeshRenderer meshRenderer;
         private MeshFilter meshFilter;
 
-        public Chunk(Material material, Vector2Int coord)
+        public Chunk(Material material, Vector2Int coord, ChunkData chunkData)
         {
+            this.ChunkData = chunkData;
             this.material = material;
             this.Coord = coord;
         }
@@ -103,11 +107,16 @@ namespace Hazel.VoxelEngine2D.Unity
                 int chunkSize = VoxelEngine.Instance.ChunkSize;
                 float tileSize = VoxelEngine.Instance.TileSize;
 
+                // 0 = left, 1 = right, 2 = bottom, 3 = top
+                var neighbourChunks = new Chunk[4];
+
                 for (int x = 0; x < VoxelEngine.Instance.ChunkSize; x++)
                 {
                     for (int y = 0; y < chunkSize; y++)
                     {
-                        var voxel = VoxelEngine.Instance.VoxelAt((int)this.WorldPosition.x + x, (int)this.WorldPosition.y + y);
+                        var voxelData = this.ChunkData.VoxelAt(x, y);
+                        var voxel = VoxelEngine.VoxelDefinitions[voxelData.Id];
+
                         if (voxel.Empty)
                         {
                             continue;
@@ -137,12 +146,10 @@ namespace Hazel.VoxelEngine2D.Unity
                         triangles.Add(v + 2);
                         triangles.Add(v + 3);
 
-                        var tilePos = new Vector2Int((int)this.WorldPosition.x + x, (int)this.WorldPosition.y + y);
-
-                        if (VoxelEngine.Instance.VoxelAt(tilePos.x - 1, tilePos.y).Empty ||
-                            VoxelEngine.Instance.VoxelAt(tilePos.x + 1, tilePos.y).Empty ||
-                            VoxelEngine.Instance.VoxelAt(tilePos.x, tilePos.y - 1).Empty ||
-                            VoxelEngine.Instance.VoxelAt(tilePos.x, tilePos.y + 1).Empty)
+                        if (this.VoxelEmpty(x - 1, y, neighbourChunks) ||
+                            this.VoxelEmpty(x + 1, y, neighbourChunks) ||
+                            this.VoxelEmpty(x, y - 1, neighbourChunks) ||
+                            this.VoxelEmpty(x, y + 1, neighbourChunks))
                         {
                             physicsShapeGroup.AddBox(new Vector2(x + 0.5f, y + 0.5f), new Vector2(1, 1));
                         }
@@ -153,6 +160,69 @@ namespace Hazel.VoxelEngine2D.Unity
 
                 return new Tuple<Vector3[], int[], Vector2[], PhysicsShapeGroup2D>(verticies.ToArray(), triangles.ToArray(), uvs.ToArray(), physicsShapeGroup);
             });
+        }
+
+        /// <summary>
+        /// Checks if voxel is empty
+        /// </summary>
+        /// <param name="x">x coord</param>
+        /// <param name="y">y coord</param>
+        /// <param name="neighbourChunks">cached neighbour chunks</param>
+        /// <returns>True if voxel is empty or doesn't exist</returns>
+        private bool VoxelEmpty(int x, int y, Chunk[] neighbourChunks)
+        {
+            if (x > 0 && x < this.ChunkData.Size - 1 && y > 0 && y < this.ChunkData.Size - 1)
+            {
+                return VoxelEngine.VoxelDefinitions[this.ChunkData.VoxelAt(x, y).Id].Empty;
+            }
+            else
+            {
+                int neighbourIndex;
+                int neighbourX = x;
+                int neighbourY = y;
+
+                if (x == -1)
+                {
+                    neighbourIndex = 0;
+                    neighbourX = this.ChunkData.Size - 1;
+                }
+                else if (x == this.ChunkData.Size)
+                {
+                    neighbourIndex = 1;
+                    neighbourX = 0;
+                } 
+                else if (y == -1)
+                {
+                    neighbourIndex = 2;
+                    neighbourY = this.ChunkData.Size - 1;
+                }
+                else
+                {
+                    neighbourIndex = 3;
+                    neighbourY = 0;
+                }
+
+                var neighbourChunk = neighbourChunks[neighbourIndex];
+                if (neighbourChunk == null)
+                {
+                    var neighbourChunkCoord = neighbourIndex switch
+                    {
+                        0 => new Vector2Int(this.Coord.x - 1, this.Coord.y),
+                        1 => new Vector2Int(this.Coord.x + 1, this.Coord.y),
+                        2 => new Vector2Int(this.Coord.x, this.Coord.y - 1),
+                        _ => new Vector2Int(this.Coord.x, this.Coord.y + 1),
+                    };
+                    neighbourChunk = VoxelEngine.Instance.ChunkAt(neighbourChunkCoord);
+                    neighbourChunks[neighbourIndex] = neighbourChunk;
+                }
+
+                if (neighbourChunk != null)
+                {
+                    return VoxelEngine.VoxelDefinitions[neighbourChunk.ChunkData.VoxelAt(neighbourX, neighbourY).Id].Empty;
+                }
+            }
+
+            return false;
         }
 
         private void BuildGameObject()

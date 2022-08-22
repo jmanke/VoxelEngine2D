@@ -1,4 +1,7 @@
 using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
+using Hazel.VoxelEngine2D.Data;
 using Hazel.VoxelEngine2D.Unity;
 using UnityEngine;
 
@@ -6,8 +9,6 @@ namespace Hazel.VoxelEngine2D
 {
     public class Voxels
     {
-        public FastNoiseUnity FastNoise = new();
-
         private readonly Dictionary<Vector2Int, Chunk> chunks = new();
         private readonly Dictionary<Vector2Int, Voxel> cachedVoxels = new();
 
@@ -17,33 +18,35 @@ namespace Hazel.VoxelEngine2D
         private readonly int chunkSize;
         private readonly Material material;
 
+        private readonly Persistence persistence;
+        private readonly VoxelGenerator voxelGenerator;
+
         public Voxels(int chunkSize, Material chunkMaterial)
         {
             this.chunkSize = chunkSize;
             this.material = chunkMaterial;
+            this.persistence = new Persistence("TestWorld");
+            this.voxelGenerator = new VoxelGenerator();
+
+            // TODO: clear all chunk files for testing, remove later
+            var dir = new DirectoryInfo(Path.Combine(Application.persistentDataPath, "TestWorld", "chunks"));
+            foreach (var file in dir.GetFiles())
+            {
+                file.Delete();
+            }
         }
 
-        public Voxel At(int x, int y)
+        public Voxel VoxelAt(int x, int y)
         {
-            if (cachedVoxels.TryGetValue(new Vector2Int(x, y), out var voxel))
+            if (this.cachedVoxels.TryGetValue(new Vector2Int(x, y), out var voxel))
             {
                 return voxel;
             }
 
-            if (y < 10)
-            {
-                return VoxelEngine.VoxelDefinitions[3];
-            }
-
-            if (y < 40)
-            {
-                return VoxelEngine.VoxelDefinitions[2];
-            }
-
-            return FastNoise.fastNoise.GetNoise(x, y) < 0.5f ? VoxelEngine.VoxelDefinitions[1] : VoxelEngine.VoxelDefinitions[0];
+            return this.voxelGenerator.VoxelAt(x, y);
         }
 
-        public void Set(int x, int y, Voxel voxel)
+        public void SetVoxel(int x, int y, Voxel voxel)
         {
             cachedVoxels[new Vector2Int(x, y)] = voxel;
         }
@@ -53,7 +56,7 @@ namespace Hazel.VoxelEngine2D
         /// </summary>
         /// <param name="center">Center of extent as world position</param>
         /// <param name="size">Size of extent</param>
-        public void UpdateExtent(Vector2 center, Vector2 size)
+        public async void UpdateExtent(Vector2 center, Vector2 size)
         {
             int radiusX = (int)size.x / 2;
             int right = (int)center.x + radiusX + this.chunkSize;
@@ -87,12 +90,60 @@ namespace Hazel.VoxelEngine2D
                     var coord = new Vector2Int(x, y);
                     if (!this.chunks.ContainsKey(coord))
                     {
-                        var chunk = new Chunk(this.material, coord);
+                        var chunk = await Task.Run(() =>
+                        {
+                            // load chunk
+                            string chunkFilename = this.ChunkDataFilename(coord);
+                            if (!this.persistence.TryLoad<ChunkData>(chunkFilename, out var chunkData))
+                            {
+                                // if not found, generate chunk data and save it
+                                chunkData = this.GenerateChunkData(coord);
+                                this.persistence.Save(chunkFilename, chunkData);
+                            }
+
+                            return new Chunk(this.material, coord, chunkData);
+                        });
+
                         this.chunks.Add(coord, chunk);
                         this.chunksToUpdate.Enqueue(chunk);
                     }
                 }
             }
+        }
+
+        private ChunkData GenerateChunkData(Vector2Int coord)
+        {
+            var chunkData = new ChunkData(this.chunkSize);
+            var worldPosition = new Vector2Int(coord.x * this.chunkSize, coord.y * this.chunkSize);
+
+            for (int x = 0; x < this.chunkSize; x++)
+            {
+                for (int y = 0; y < this.chunkSize; y++)
+                {
+                    var voxel = this.voxelGenerator.VoxelAt(worldPosition.x + x, worldPosition.y + y);
+                    var voxelData = new VoxelData
+                    {
+                        Id = voxel.Id,
+                        CurrentHitPoints = 0
+                    };
+
+                    chunkData.SetVoxel(x, y, voxelData);
+                }
+            }
+
+            return chunkData;
+        }
+
+        /// <summary>
+        /// Retrieves chunk at coord
+        /// </summary>
+        /// <param name="coord">Coordinate of chunk (world pos / chunk size)</param>
+        /// <returns>Chunk or null if chunk is not found</returns>
+        public Chunk ChunkAt(Vector2Int coord)
+        {
+            this.chunks.TryGetValue(coord, out var chunk);
+
+            return chunk;
         }
 
         /// <summary>
@@ -115,7 +166,7 @@ namespace Hazel.VoxelEngine2D
         /// <param name="voxel">Voxel to set at coordinate</param>
         public void UpdateVoxel(Vector2Int coord, Voxel voxel)
         {
-            this.Set(coord.x, coord.y, voxel);
+            this.SetVoxel(coord.x, coord.y, voxel);
             this.UpdateChunk(new Vector2(coord.x, coord.y));
 
             // check if a neighbour chunk also needs to be updated
@@ -158,6 +209,16 @@ namespace Hazel.VoxelEngine2D
             {
                 chunkToLoad.Update();
             }
+        }
+
+        private string ChunkDataFilename(Vector2Int chunkCoord)
+        {
+            return Path.Combine("chunks", $"chunk_{chunkCoord.x}_{chunkCoord.y}.dat");
+        }
+
+        private void LoadChunkData(Vector2Int chunkCoord)
+        {
+            
         }
     }
 }

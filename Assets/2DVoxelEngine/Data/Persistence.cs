@@ -1,7 +1,6 @@
 using System.IO;
 using UnityEngine;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Runtime.Serialization;
 
 namespace Hazel.VoxelEngine2D.Data
 {
@@ -17,7 +16,7 @@ namespace Hazel.VoxelEngine2D.Data
         /// <summary>
         /// Saves a serializable 
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">Type that is serializable</typeparam>
         /// <param name="filename">file name save location</param>
         /// <param name="data"></param>
         /// <returns></returns>
@@ -50,6 +49,13 @@ namespace Hazel.VoxelEngine2D.Data
             return true;
         }
 
+        /// <summary>
+        /// Loads data at specified filename
+        /// </summary>
+        /// <typeparam name="T">Type to deserialze</typeparam>
+        /// <param name="filename">relative path + file name of data</param>
+        /// <param name="data">data read from the file</param>
+        /// <returns></returns>
         public bool TryLoad<T>(string filename, out T data)
         {
             try
@@ -62,11 +68,9 @@ namespace Hazel.VoxelEngine2D.Data
                 stream.Flush();
                 stream.Close();
                 stream.Dispose();
-
             }
-            catch (System.Exception exception)
+            catch
             {
-                Debug.LogException(exception);
                 data = default;
                 return false;
             }
