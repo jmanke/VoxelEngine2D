@@ -10,7 +10,6 @@ namespace Hazel.VoxelEngine2D
     public class Voxels
     {
         private readonly Dictionary<Vector2Int, Chunk> chunks = new();
-        private readonly Dictionary<Vector2Int, Voxel> cachedVoxels = new();
 
         private readonly Queue<Chunk> chunksToUpdate = new();
         private readonly Queue<Chunk> chunksToUnload = new();
@@ -36,14 +35,21 @@ namespace Hazel.VoxelEngine2D
             }
         }
 
-        public Voxel VoxelAt(int x, int y)
+        /// <summary>
+        /// Retrieves voxel at voxel coordinate
+        /// </summary>
+        /// <param name="coord">Voxel coordinate</param>
+        /// <returns>Voxel</returns>
+        public Voxel VoxelAt(Vector2Int coord)
         {
-            if (this.cachedVoxels.TryGetValue(new Vector2Int(x, y), out var voxel))
+            var chunk = this.ChunkAt(coord);
+            if (chunk == null)
             {
-                return voxel;
+                return this.voxelGenerator.VoxelAt(coord.x, coord.y);
             }
 
-            return this.voxelGenerator.VoxelAt(x, y);
+            var voxelChunkCoord = Chunk.WorldPosToVoxelCoord(coord.x, coord.y);
+            return chunk.VoxelAt(voxelChunkCoord);
         }
 
         /// <summary>
@@ -198,26 +204,26 @@ namespace Hazel.VoxelEngine2D
             // left
             if (chunkVoxelCoord.x == 0)
             {
-                var c = this.ChunkAt(new Vector2Int(chunkCoord.x - 1, chunkCoord.y));
+                var c = this.ChunkAtCoord(new Vector2Int(chunkCoord.x - 1, chunkCoord.y));
                 this.UpdateChunk(c);
             }
             // right
             else if (chunkVoxelCoord.x == this.chunkSize - 1)
             {
-                var c = this.ChunkAt(new Vector2Int(chunkCoord.x + 1, chunkCoord.y));
+                var c = this.ChunkAtCoord(new Vector2Int(chunkCoord.x + 1, chunkCoord.y));
                 this.UpdateChunk(c);
             }
 
             // bottom
             if (chunkVoxelCoord.y == 0)
             {
-                var c = this.ChunkAt(new Vector2Int(chunkCoord.x, chunkCoord.y - 1));
+                var c = this.ChunkAtCoord(new Vector2Int(chunkCoord.x, chunkCoord.y - 1));
                 this.UpdateChunk(c);
             }
             // top
             else if (chunkVoxelCoord.y == this.chunkSize - 1)
             {
-                var c = this.ChunkAt(new Vector2Int(chunkCoord.x, chunkCoord.y + 1));
+                var c = this.ChunkAtCoord(new Vector2Int(chunkCoord.x, chunkCoord.y + 1));
                 this.UpdateChunk(c);
             }
         }

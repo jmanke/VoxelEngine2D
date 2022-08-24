@@ -57,7 +57,7 @@ namespace Hazel.VoxelEngine2D
 
         public void Start()
         {
-            //this.UpdateExtent();
+            this.UpdateExtent();
         }
 
         public void UpdateExtent()
@@ -71,9 +71,14 @@ namespace Hazel.VoxelEngine2D
         /// </summary>
         /// <param name="coord">Coordinate of chunk (world pos / chunk size)</param>
         /// <returns>Chunk or null if chunk is not found</returns>
-        public Chunk ChunkAt(Vector2Int coord)
+        public Chunk ChunkAtCoord(Vector2Int coord)
         {
-            return this.voxels.ChunkAt(coord);
+            return this.voxels.ChunkAtCoord(coord);
+        }
+
+        public Voxel VoxelAt(Vector2 pos)
+        {
+            return this.voxels.VoxelAt(Voxel.WorldToCoord(pos));
         }
 
         /// <summary>
@@ -81,9 +86,9 @@ namespace Hazel.VoxelEngine2D
         /// </summary>
         /// <param name="pos">World position of the voxel</param>
         /// <param name="voxel">Voxel to set at position</param>
-        public void UpdateVoxel(Vector2Int pos, Voxel voxel)
+        public void UpdateVoxel(Vector2 pos, Voxel voxel)
         {
-            this.voxels.UpdateVoxel(pos, voxel);
+            this.voxels.UpdateVoxel(Voxel.WorldToCoord(pos), voxel);
         }
 
         /// <summary>
@@ -109,17 +114,6 @@ namespace Hazel.VoxelEngine2D
             {
                 VoxelDefinitions[voxel.Id] = voxel;
             }
-        }
-
-        /// <summary>
-        /// Gets a voxel from a coordinate
-        /// </summary>
-        /// <param name="x">x coordinate</param>
-        /// <param name="y">y coordinate</param>
-        /// <returns></returns>
-        public Voxel VoxelAt(int x, int y)
-        {
-            return this.voxels.VoxelAt(x, y);
         }
 
         private void FixedUpdate()

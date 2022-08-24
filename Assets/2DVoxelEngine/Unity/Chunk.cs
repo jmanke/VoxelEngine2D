@@ -69,6 +69,16 @@ namespace Hazel.VoxelEngine2D.Unity
         }
 
         /// <summary>
+        /// Retrieves the voxel at coordinate (relative to chunk)
+        /// </summary>
+        /// <param name="coord">Coordinate relative to chunk</param>
+        /// <returns>Voxel</returns>
+        public Voxel VoxelAt(Vector2Int coord)
+        {
+            return VoxelEngine.VoxelDefinitions[this.ChunkData.VoxelAt(coord.x, coord.y).Id];
+        }
+
+        /// <summary>
         /// Updates the chunk with current voxel information
         /// </summary>
         public async void Update()
@@ -246,7 +256,7 @@ namespace Hazel.VoxelEngine2D.Unity
                         2 => new Vector2Int(this.Coord.x, this.Coord.y - 1),
                         _ => new Vector2Int(this.Coord.x, this.Coord.y + 1),
                     };
-                    neighbourChunk = VoxelEngine.Instance.ChunkAt(neighbourChunkCoord);
+                    neighbourChunk = VoxelEngine.Instance.ChunkAtCoord(neighbourChunkCoord);
                     neighbourChunks[neighbourIndex] = neighbourChunk;
                 }
 
