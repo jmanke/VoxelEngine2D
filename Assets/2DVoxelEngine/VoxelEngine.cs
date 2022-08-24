@@ -77,22 +77,13 @@ namespace Hazel.VoxelEngine2D
         }
 
         /// <summary>
-        /// Updates chunk at world position
+        /// Updates a voxel at the given position. This will also update necessary chunks
         /// </summary>
-        /// <param name="position">world position</param>
-        public void UpdateChunk(Vector2 position)
+        /// <param name="pos">World position of the voxel</param>
+        /// <param name="voxel">Voxel to set at position</param>
+        public void UpdateVoxel(Vector2Int pos, Voxel voxel)
         {
-            this.voxels.UpdateChunk(position);
-        }
-
-        /// <summary>
-        /// Updates a voxel at the given coordinate. This will also update necessary chunks
-        /// </summary>
-        /// <param name="coord">Coordinate of the voxel</param>
-        /// <param name="voxel">Voxel to set at coordinate</param>
-        public void UpdateVoxel(Vector2Int coord, Voxel voxel)
-        {
-            this.voxels.UpdateVoxel(coord, voxel);
+            this.voxels.UpdateVoxel(pos, voxel);
         }
 
         /// <summary>
@@ -129,17 +120,6 @@ namespace Hazel.VoxelEngine2D
         public Voxel VoxelAt(int x, int y)
         {
             return this.voxels.VoxelAt(x, y);
-        }
-
-        /// <summary>
-        /// Sets voxel at coordinate
-        /// </summary>
-        /// <param name="x">x coordinate</param>
-        /// <param name="y">y coordinate</param>
-        /// <param name="voxel">Voxel to set</param>
-        public void SetVoxel(int x, int y, Voxel voxel)
-        {
-            this.voxels.SetVoxel(x, y, voxel);
         }
 
         private void FixedUpdate()

@@ -46,11 +46,6 @@ namespace Hazel.VoxelEngine2D
             return this.voxelGenerator.VoxelAt(x, y);
         }
 
-        public void SetVoxel(int x, int y, Voxel voxel)
-        {
-            cachedVoxels[new Vector2Int(x, y)] = voxel;
-        }
-
         /// <summary>
         /// Updates the extent of voxels
         /// </summary>
@@ -113,6 +108,7 @@ namespace Hazel.VoxelEngine2D
 
             // wait for all chunks to load
             await Task.WhenAll(chunkTasks.ToArray());
+
             chunkTasks.ForEach(task => 
                 {
                     var chunk = task.Result;
@@ -145,11 +141,21 @@ namespace Hazel.VoxelEngine2D
         }
 
         /// <summary>
-        /// Retrieves chunk at coord
+        /// Retrieves chunk at position
         /// </summary>
-        /// <param name="coord">Coordinate of chunk (world pos / chunk size)</param>
+        /// <param name="pos">World position of chun</param>
         /// <returns>Chunk or null if chunk is not found</returns>
-        public Chunk ChunkAt(Vector2Int coord)
+        public Chunk ChunkAt(Vector2Int pos)
+        {
+            return this.ChunkAtCoord(Chunk.WorldPosToCoord(pos.x, pos.y));
+        }
+
+        /// <summary>
+        /// Retrieves chunk at coordinate
+        /// </summary>
+        /// <param name="coord">Coordinate of chunk</param>
+        /// <returns>Chunk or null if chunk is not found</returns>
+        public Chunk ChunkAtCoord(Vector2Int coord)
         {
             this.chunks.TryGetValue(coord, out var chunk);
 
@@ -157,13 +163,12 @@ namespace Hazel.VoxelEngine2D
         }
 
         /// <summary>
-        /// Updates chunk at world position
+        /// Queues chunk for update
         /// </summary>
-        /// <param name="position">world position</param>
-        public void UpdateChunk(Vector2 position)
+        /// <param name="chunk">Chunk to update</param>
+        public void UpdateChunk(Chunk chunk)
         {
-            var coord = new Vector2Int((int)position.x / this.chunkSize, (int)position.y / this.chunkSize);
-            if (this.chunks.TryGetValue(coord, out var chunk))
+            if (chunk != null)
             {
                 this.chunksToUpdate.Enqueue(chunk);
             }
@@ -172,42 +177,55 @@ namespace Hazel.VoxelEngine2D
         /// <summary>
         /// Updates a voxel at the given coordinate. This will also update necessary chunks
         /// </summary>
-        /// <param name="coord">Coordinate of the voxel</param>
-        /// <param name="voxel">Voxel to set at coordinate</param>
-        public void UpdateVoxel(Vector2Int coord, Voxel voxel)
+        /// <param name="pos">World position of voxel</param>
+        /// <param name="voxel">Voxel to set at position</param>
+        public void UpdateVoxel(Vector2Int pos, Voxel voxel)
         {
-            this.SetVoxel(coord.x, coord.y, voxel);
-            this.UpdateChunk(new Vector2(coord.x, coord.y));
+            var chunkCoord = Chunk.WorldPosToCoord(pos.x, pos.y);
+            var chunk = this.ChunkAtCoord(chunkCoord);
+
+            if (chunk == null)
+            {
+                return;
+            }
+
+            var chunkVoxelCoord = Chunk.WorldPosToVoxelCoord(pos.x, pos.y);
+
+            chunk.ChunkData.SetVoxel(chunkVoxelCoord.x, chunkVoxelCoord.y, voxel.ToVoxelData());
+            this.UpdateChunk(chunk);
 
             // check if a neighbour chunk also needs to be updated
-            int chunkX = coord.x % this.chunkSize;
-            int chunkY = coord.y % this.chunkSize;
-
             // left
-            if (chunkX == 0)
+            if (chunkVoxelCoord.x == 0)
             {
-                this.UpdateChunk(new Vector2(coord.x - 1, coord.y));
+                var c = this.ChunkAt(new Vector2Int(chunkCoord.x - 1, chunkCoord.y));
+                this.UpdateChunk(c);
             }
             // right
-            else if (chunkX == this.chunkSize - 1)
+            else if (chunkVoxelCoord.x == this.chunkSize - 1)
             {
-                this.UpdateChunk(new Vector2(coord.x + 1, coord.y));
+                var c = this.ChunkAt(new Vector2Int(chunkCoord.x + 1, chunkCoord.y));
+                this.UpdateChunk(c);
             }
 
             // bottom
-            if (chunkY == 0)
+            if (chunkVoxelCoord.y == 0)
             {
-                this.UpdateChunk(new Vector2(coord.x, coord.y - 1));
+                var c = this.ChunkAt(new Vector2Int(chunkCoord.x, chunkCoord.y - 1));
+                this.UpdateChunk(c);
             }
             // top
-            else if (chunkY == this.chunkSize - 1)
+            else if (chunkVoxelCoord.y == this.chunkSize - 1)
             {
-                this.UpdateChunk(new Vector2(coord.x, coord.y + 1));
+                var c = this.ChunkAt(new Vector2Int(chunkCoord.x, chunkCoord.y + 1));
+                this.UpdateChunk(c);
             }
         }
 
         public void Update()
         {
+            // only perform one unload and load per frame to prevent frame drops
+
             //unload chunk
             if (this.chunksToUnload.TryDequeue(out var chunkToUnload))
             {
@@ -224,11 +242,6 @@ namespace Hazel.VoxelEngine2D
         private string ChunkDataFilename(Vector2Int chunkCoord)
         {
             return Path.Combine("chunks", $"chunk_{chunkCoord.x}_{chunkCoord.y}.dat");
-        }
-
-        private void LoadChunkData(Vector2Int chunkCoord)
-        {
-            
         }
     }
 }

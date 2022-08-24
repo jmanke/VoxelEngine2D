@@ -1,4 +1,5 @@
 using Hazel.VoxelEngine2D;
+using Hazel.VoxelEngine2D.Unity;
 using UnityEngine;
 
 [RequireComponent(typeof(Camera))]
@@ -25,10 +26,9 @@ public class Camera2D : MonoBehaviour
         if (Input.GetMouseButtonDown(0))
         {
             var worldPoint = this.Camera.ScreenToWorldPoint(Input.mousePosition);
-            var coord = new Vector2Int((int)worldPoint.x, (int)worldPoint.y);
 
             // set to empty tile
-            VoxelEngine.Instance.UpdateVoxel(coord, VoxelEngine.VoxelDefinitions[0]);
+            VoxelEngine.Instance.UpdateVoxel(Voxel.WorldToCoord(worldPoint), VoxelEngine.VoxelDefinitions[0]);
         }
 
         if (Input.GetKey(KeyCode.W))

@@ -9,14 +9,7 @@ namespace Hazel.VoxelEngine2D.Unity
     public class Chunk
     {
         public readonly Vector2Int Coord;
-
-        public Vector2 WorldPosition
-        {
-            get
-            {
-                return this.Coord * VoxelEngine.Instance.ChunkSize;
-            }
-        }
+        public readonly Vector2 WorldPosition;
 
         public ChunkData ChunkData { get; private set; }
 
@@ -32,6 +25,47 @@ namespace Hazel.VoxelEngine2D.Unity
             this.ChunkData = chunkData;
             this.material = material;
             this.Coord = coord;
+            this.WorldPosition = new Vector2(coord.x * chunkData.Size, coord.y * chunkData.Size);
+        }
+
+        /// <summary>
+        /// Converts a world position to chunk coordinate
+        /// </summary>
+        /// <param name="pos">Worl position</param>
+        /// <returns>Chunk coordinate</returns>
+        public static Vector2Int WorldPosToCoord(Vector2 pos)
+        {
+            return WorldPosToCoord((int)pos.x, (int)pos.y);
+        }
+
+        /// <summary>
+        ///  Converts a world position to chunk coordinate
+        /// </summary>
+        /// <param name="x">World x position</param>
+        /// <param name="y">World y position</param>
+        /// <returns>Chunk coordinate</returns>
+        public static Vector2Int WorldPosToCoord(int x, int y)
+        {
+            int chunkSize = VoxelEngine.Instance.ChunkSize;
+            if (x < 0) x -= (chunkSize - 1);
+            if (y < 0) x -= (chunkSize - 1);
+            return new Vector2Int(x / chunkSize, y / chunkSize);
+        }
+
+        /// <summary>
+        ///  Converts a world position to the voxel's position in the chunk
+        /// </summary>
+        /// <param name="x">World x position</param>
+        /// <param name="y">World y position</param>
+        /// <returns>Voxel coordinate in the chunk</returns>
+        public static Vector2Int WorldPosToVoxelCoord(int x, int y)
+        {
+            int chunkSize = VoxelEngine.Instance.ChunkSize;
+            x %= chunkSize;
+            y %= chunkSize;
+            if (x < 0) x += chunkSize;
+            if (y < 0) x += chunkSize;
+            return new Vector2Int(x, y);
         }
 
         /// <summary>
