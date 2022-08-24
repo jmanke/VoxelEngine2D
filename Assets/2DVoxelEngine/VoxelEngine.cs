@@ -26,9 +26,9 @@ namespace Hazel.VoxelEngine2D
         // sparse array of definitions for voxels
         public static Voxel[] VoxelDefinitions { get; private set; }
 
-        public float TileSize { get; private set; } = 0.0625f;
+        public static float TileSize { get; private set; } = 0.0625f;
 
-        public int ChunkSize { get; private set; }
+        public static int ChunkSize { get; private set; }
 
         private WorldProfileData worldProfile;
         private Voxels voxels;
@@ -50,9 +50,9 @@ namespace Hazel.VoxelEngine2D
             Instance = this;
             DontDestroyOnLoad(this.gameObject);
             this.worldProfile = new WorldProfileData();
-            this.ChunkSize = this.worldProfile.ChunkSize;
+            ChunkSize = this.worldProfile.ChunkSize;
             this.LoadVoxelDefinitions();
-            this.voxels = new Voxels(this.ChunkSize, this.material);
+            this.voxels = new Voxels(this.material);
         }
 
         public void Start()
@@ -64,16 +64,6 @@ namespace Hazel.VoxelEngine2D
         {
             this.lastExtentPosition = this.extentTransform.position;
             this.voxels.UpdateExtent(this.lastExtentPosition, new Vector2(150f, 150f));
-        }
-
-        /// <summary>
-        /// Retrieves chunk at coord
-        /// </summary>
-        /// <param name="coord">Coordinate of chunk (world pos / chunk size)</param>
-        /// <returns>Chunk or null if chunk is not found</returns>
-        public Chunk ChunkAtCoord(Vector2Int coord)
-        {
-            return this.voxels.ChunkAtCoord(coord);
         }
 
         public Voxel VoxelAt(Vector2 pos)
@@ -118,7 +108,7 @@ namespace Hazel.VoxelEngine2D
 
         private void FixedUpdate()
         {
-            if (Vector2.Distance(this.extentTransform.position, this.lastExtentPosition) > this.ChunkSize)
+            if (Vector2.Distance(this.extentTransform.position, this.lastExtentPosition) > ChunkSize)
             {
                 this.UpdateExtent();
             }

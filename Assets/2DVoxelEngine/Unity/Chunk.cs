@@ -19,9 +19,11 @@ namespace Hazel.VoxelEngine2D.Unity
         private Rigidbody2D rigidbody;
         private MeshRenderer meshRenderer;
         private MeshFilter meshFilter;
+        private Voxels voxels;
 
-        public Chunk(Material material, Vector2Int coord, ChunkData chunkData)
+        public Chunk(Voxels voxels, Material material, Vector2Int coord, ChunkData chunkData)
         {
+            this.voxels = voxels;
             this.ChunkData = chunkData;
             this.material = material;
             this.Coord = coord;
@@ -46,10 +48,9 @@ namespace Hazel.VoxelEngine2D.Unity
         /// <returns>Chunk coordinate</returns>
         public static Vector2Int WorldPosToCoord(int x, int y)
         {
-            int chunkSize = VoxelEngine.Instance.ChunkSize;
-            if (x < 0) x -= (chunkSize - 1);
-            if (y < 0) x -= (chunkSize - 1);
-            return new Vector2Int(x / chunkSize, y / chunkSize);
+            if (x < 0) x -= (VoxelEngine.ChunkSize - 1);
+            if (y < 0) x -= (VoxelEngine.ChunkSize - 1);
+            return new Vector2Int(x / VoxelEngine.ChunkSize, y / VoxelEngine.ChunkSize);
         }
 
         /// <summary>
@@ -60,11 +61,10 @@ namespace Hazel.VoxelEngine2D.Unity
         /// <returns>Voxel coordinate in the chunk</returns>
         public static Vector2Int WorldPosToVoxelCoord(int x, int y)
         {
-            int chunkSize = VoxelEngine.Instance.ChunkSize;
-            x %= chunkSize;
-            y %= chunkSize;
-            if (x < 0) x += chunkSize;
-            if (y < 0) x += chunkSize;
+            x %= VoxelEngine.ChunkSize;
+            y %= VoxelEngine.ChunkSize;
+            if (x < 0) x += VoxelEngine.ChunkSize;
+            if (y < 0) x += VoxelEngine.ChunkSize;
             return new Vector2Int(x, y);
         }
 
@@ -148,13 +148,13 @@ namespace Hazel.VoxelEngine2D.Unity
                 var physicsShapeGroup = new PhysicsShapeGroup2D();
                 int v = 0;
 
-                int chunkSize = VoxelEngine.Instance.ChunkSize;
-                float tileSize = VoxelEngine.Instance.TileSize;
+                int chunkSize = VoxelEngine.ChunkSize;
+                float tileSize = VoxelEngine.TileSize;
 
                 // 0 = left, 1 = right, 2 = bottom, 3 = top
                 var neighbourChunks = new Chunk[4];
 
-                for (int x = 0; x < VoxelEngine.Instance.ChunkSize; x++)
+                for (int x = 0; x < VoxelEngine.ChunkSize; x++)
                 {
                     for (int y = 0; y < chunkSize; y++)
                     {
@@ -256,7 +256,7 @@ namespace Hazel.VoxelEngine2D.Unity
                         2 => new Vector2Int(this.Coord.x, this.Coord.y - 1),
                         _ => new Vector2Int(this.Coord.x, this.Coord.y + 1),
                     };
-                    neighbourChunk = VoxelEngine.Instance.ChunkAtCoord(neighbourChunkCoord);
+                    neighbourChunk = this.voxels.ChunkAt(neighbourChunkCoord);
                     neighbourChunks[neighbourIndex] = neighbourChunk;
                 }
 
@@ -271,7 +271,7 @@ namespace Hazel.VoxelEngine2D.Unity
 
         private void BuildGameObject()
         {
-            int chunkSize = VoxelEngine.Instance.ChunkSize;
+            int chunkSize = VoxelEngine.ChunkSize;
             this.gameObject = new GameObject($"Chunk_{this.Coord.x / chunkSize}_{this.Coord.y / chunkSize}");
             this.gameObject.transform.position = this.WorldPosition;
             this.meshRenderer = this.gameObject.AddComponent<MeshRenderer>();
