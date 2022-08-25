@@ -60,6 +60,11 @@ namespace Hazel.VoxelEngine2D
             this.UpdateExtent();
         }
 
+        public void OnApplicationQuit()
+        {
+            this.voxels.SaveAll();
+        }
+
         public void UpdateExtent()
         {
             this.lastExtentPosition = this.extentTransform.position;

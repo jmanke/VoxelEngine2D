@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Hazel.VoxelEngine2D.Data;
 using Hazel.VoxelEngine2D.Unity;
@@ -26,11 +27,11 @@ namespace Hazel.VoxelEngine2D
             this.voxelGenerator = new VoxelGenerator();
 
             // TODO: clear all chunk files for testing, remove later
-            var dir = new DirectoryInfo(Path.Combine(Application.persistentDataPath, "TestWorld", "chunks"));
-            foreach (var file in dir.GetFiles())
-            {
-                file.Delete();
-            }
+            //var dir = new DirectoryInfo(Path.Combine(Application.persistentDataPath, "TestWorld", "chunks"));
+            //foreach (var file in dir.GetFiles())
+            //{
+            //    file.Delete();
+            //}
         }
 
         /// <summary>
@@ -176,11 +177,11 @@ namespace Hazel.VoxelEngine2D
         /// <summary>
         /// Updates a voxel at the given coordinate. This will also update necessary chunks
         /// </summary>
-        /// <param name="pos">World position of voxel</param>
+        /// <param name="coord">Coord of voxel</param>
         /// <param name="voxel">Voxel to set at position</param>
-        public void UpdateVoxel(Vector2Int pos, Voxel voxel)
+        public void UpdateVoxel(Vector2Int coord, Voxel voxel)
         {
-            var chunkCoord = Chunk.WorldPosToCoord(pos.x, pos.y);
+            var chunkCoord = Chunk.WorldPosToCoord(coord.x, coord.y);
             var chunk = this.ChunkAt(chunkCoord);
 
             if (chunk == null)
@@ -188,9 +189,9 @@ namespace Hazel.VoxelEngine2D
                 return;
             }
 
-            var chunkVoxelCoord = Chunk.WorldPosToVoxelCoord(pos.x, pos.y);
+            var chunkVoxelCoord = Chunk.WorldPosToVoxelCoord(coord.x, coord.y);
 
-            chunk.ChunkData.SetVoxel(chunkVoxelCoord.x, chunkVoxelCoord.y, voxel.ToVoxelData());
+            chunk.SetVoxel(chunkVoxelCoord, voxel);
             this.UpdateChunk(chunk);
 
             // check if a neighbour chunk also needs to be updated
@@ -221,20 +222,55 @@ namespace Hazel.VoxelEngine2D
             }
         }
 
+        /// <summary>
+        /// Frame update
+        /// </summary>
         public void Update()
         {
             // only perform one unload and load per frame to prevent frame drops
-
-            //unload chunk
-            if (this.chunksToUnload.TryDequeue(out var chunkToUnload))
-            {
-                chunkToUnload.Unload();
-            }
 
             // load chunk
             if (this.chunksToUpdate.TryDequeue(out var chunkToLoad))
             {
                 chunkToLoad.Update();
+            }
+
+            //unload chunk
+            if (this.chunksToUnload.TryDequeue(out var chunkToUnload))
+            {
+                this.SaveChunk(chunkToUnload);
+                chunkToUnload.Unload();
+            }
+        }
+
+        /// <summary>
+        /// Saves all chunks
+        /// </summary>
+        public void SaveAll()
+        {
+            this.chunks.Values.ToList().ForEach(chunk => this.SaveChunk(chunk));
+        }
+
+        /// <summary>
+        /// Saves chunk
+        /// </summary>
+        /// <param name="chunk">Chunk to save</param>
+        private async void SaveChunk(Chunk chunk)
+        {
+            if (chunk == null || !chunk.IsDirty)
+            {
+                return;
+            }
+
+            bool saved = await Task.Run(() =>
+            {
+                Debug.Log($"Saved chunk_{chunk.Coord.x}_{chunk.Coord.y}");
+                return this.persistence.Save(this.ChunkDataFilename(chunk.Coord), chunk.ChunkData);
+            });
+
+            if (saved)
+            {
+                chunk.IsDirty = false;
             }
         }
 

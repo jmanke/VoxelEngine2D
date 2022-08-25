@@ -8,18 +8,23 @@ namespace Hazel.VoxelEngine2D.Unity
 {
     public class Chunk
     {
+        public ChunkData ChunkData { get; private set; }
+        
+        /// <summary>
+        /// Determines if chunk needs to be saved. Set externally
+        /// </summary>
+        public bool IsDirty { get; set; }
+
         public readonly Vector2Int Coord;
         public readonly Vector2 WorldPosition;
-
-        public ChunkData ChunkData { get; private set; }
-
         private readonly Material material;
+        private readonly Voxels voxels;
+
         private GameObject gameObject;
         private CustomCollider2D collider;
         private Rigidbody2D rigidbody;
         private MeshRenderer meshRenderer;
         private MeshFilter meshFilter;
-        private Voxels voxels;
 
         public Chunk(Voxels voxels, Material material, Vector2Int coord, ChunkData chunkData)
         {
@@ -28,16 +33,6 @@ namespace Hazel.VoxelEngine2D.Unity
             this.material = material;
             this.Coord = coord;
             this.WorldPosition = new Vector2(coord.x * chunkData.Size, coord.y * chunkData.Size);
-        }
-
-        /// <summary>
-        /// Converts a world position to chunk coordinate
-        /// </summary>
-        /// <param name="pos">Worl position</param>
-        /// <returns>Chunk coordinate</returns>
-        public static Vector2Int WorldPosToCoord(Vector2 pos)
-        {
-            return WorldPosToCoord((int)pos.x, (int)pos.y);
         }
 
         /// <summary>
@@ -76,6 +71,18 @@ namespace Hazel.VoxelEngine2D.Unity
         public Voxel VoxelAt(Vector2Int coord)
         {
             return VoxelEngine.VoxelDefinitions[this.ChunkData.VoxelAt(coord.x, coord.y).Id];
+        }
+
+        /// <summary>
+        /// Sets the voxel at coordinate (relative to chunk)
+        /// </summary>
+        /// <param name="coord">Coordinate relative to chunk</param>
+        /// <param name="voxel">Voxel to set</param>
+        /// <returns></returns>
+        public void SetVoxel(Vector2Int coord, Voxel voxel)
+        {
+            this.ChunkData.SetVoxel(coord.x, coord.y, voxel.ToVoxelData());
+            this.IsDirty = true;
         }
 
         /// <summary>

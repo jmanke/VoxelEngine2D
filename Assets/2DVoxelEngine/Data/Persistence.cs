@@ -14,7 +14,7 @@ namespace Hazel.VoxelEngine2D.Data
         }
 
         /// <summary>
-        /// Saves a serializable 
+        /// Saves a serializable data
         /// </summary>
         /// <typeparam name="T">Type that is serializable</typeparam>
         /// <param name="filename">file name save location</param>
