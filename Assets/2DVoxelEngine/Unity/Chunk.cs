@@ -11,7 +11,7 @@ namespace Hazel.VoxelEngine2D.Unity
         public ChunkData ChunkData { get; private set; }
         
         /// <summary>
-        /// Determines if chunk needs to be saved. Set externally
+        /// Determines if chunk needs to be saved. Set false externally
         /// </summary>
         public bool IsDirty { get; set; }
 
