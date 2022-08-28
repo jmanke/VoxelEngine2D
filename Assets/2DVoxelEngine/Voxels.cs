@@ -143,7 +143,7 @@ namespace Hazel.VoxelEngine2D
                         CurrentHitPoints = 0
                     };
 
-                    chunkData.SetVoxel(x, y, voxelData);
+                    chunkData.Voxels[x, y] = voxelData;
                 }
             }
 

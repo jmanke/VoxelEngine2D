@@ -70,7 +70,7 @@ namespace Hazel.VoxelEngine2D.Unity
         /// <returns>Voxel</returns>
         public Voxel VoxelAt(Vector2Int coord)
         {
-            return VoxelEngine.VoxelDefinitions[this.ChunkData.VoxelAt(coord.x, coord.y).Id];
+            return VoxelEngine.VoxelDefinitions[this.ChunkData.Voxels[coord.x, coord.y].Id];
         }
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace Hazel.VoxelEngine2D.Unity
         /// <returns></returns>
         public void SetVoxel(Vector2Int coord, Voxel voxel)
         {
-            this.ChunkData.SetVoxel(coord.x, coord.y, voxel.ToVoxelData());
+            this.ChunkData.Voxels[coord.x, coord.y] = voxel.ToVoxelData();
             this.IsDirty = true;
         }
 
@@ -97,7 +97,7 @@ namespace Hazel.VoxelEngine2D.Unity
 
             var (verticies, triangles, uv, physicsShapeGroup) = await this.CalculateObjectProperties();
 
-            var mesh = this.meshFilter.mesh;
+            var mesh = this.meshFilter.sharedMesh;
             mesh.Clear();
             mesh.vertices = verticies;
             mesh.triangles = triangles;
@@ -137,6 +137,7 @@ namespace Hazel.VoxelEngine2D.Unity
                 return;
             }
 
+            UnityEngine.Object.Destroy(this.meshFilter.sharedMesh);
             UnityEngine.Object.Destroy(this.gameObject);
             this.gameObject = null;
             collider = null;
@@ -165,7 +166,7 @@ namespace Hazel.VoxelEngine2D.Unity
                 {
                     for (int y = 0; y < chunkSize; y++)
                     {
-                        var voxelData = this.ChunkData.VoxelAt(x, y);
+                        var voxelData = this.ChunkData.Voxels[x, y];
                         var voxel = VoxelEngine.VoxelDefinitions[voxelData.Id];
 
                         if (voxel.Empty)
@@ -224,7 +225,7 @@ namespace Hazel.VoxelEngine2D.Unity
         {
             if (x >= 0 && x < this.ChunkData.Size && y >= 0 && y < this.ChunkData.Size)
             {
-                return VoxelEngine.VoxelDefinitions[this.ChunkData.VoxelAt(x, y).Id].Empty;
+                return VoxelEngine.VoxelDefinitions[this.ChunkData.Voxels[x, y].Id].Empty;
             }
             else
             {
@@ -269,7 +270,7 @@ namespace Hazel.VoxelEngine2D.Unity
 
                 if (neighbourChunk != null)
                 {
-                    return VoxelEngine.VoxelDefinitions[neighbourChunk.ChunkData.VoxelAt(neighbourX, neighbourY).Id].Empty;
+                    return VoxelEngine.VoxelDefinitions[neighbourChunk.ChunkData.Voxels[neighbourX, neighbourY].Id].Empty;
                 }
             }
 
@@ -284,7 +285,7 @@ namespace Hazel.VoxelEngine2D.Unity
             this.meshRenderer = this.gameObject.AddComponent<MeshRenderer>();
             this.meshRenderer.material = this.material;
             this.meshFilter = this.gameObject.AddComponent<MeshFilter>();
-            this.meshFilter.mesh = new Mesh();
+            this.meshFilter.sharedMesh = new Mesh();
         }
     }
 }
