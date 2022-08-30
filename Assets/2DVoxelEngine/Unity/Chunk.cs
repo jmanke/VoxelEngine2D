@@ -113,6 +113,7 @@ namespace Hazel.VoxelEngine2D.Unity
                     this.collider = this.gameObject.AddComponent<CustomCollider2D>();
                 }
 
+                this.collider.ClearCustomShapes();
                 this.collider.SetCustomShapes(physicsShapeGroup);
             }
             else

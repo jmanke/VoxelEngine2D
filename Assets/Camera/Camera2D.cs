@@ -4,8 +4,6 @@ using UnityEngine;
 [RequireComponent(typeof(Camera))]
 public class Camera2D : MonoBehaviour
 {
-    public float cameraSpeed = 1f;
-
     public Camera Camera {get; private set; }
 
     private void Awake()
@@ -30,23 +28,6 @@ public class Camera2D : MonoBehaviour
 
             // set to empty tile
             VoxelEngine.Instance.UpdateVoxel(worldPoint, VoxelEngine.VoxelDefinitions[0]);
-        }
-
-        if (Input.GetKey(KeyCode.W))
-        {
-            this.transform.position += Vector3.up * this.cameraSpeed;
-        }
-        if (Input.GetKey(KeyCode.S))
-        {
-            this.transform.position += Vector3.down * this.cameraSpeed;
-        }
-        if (Input.GetKey(KeyCode.A))
-        {
-            this.transform.position += Vector3.left * this.cameraSpeed;
-        }
-        if (Input.GetKey(KeyCode.D))
-        {
-            this.transform.position += Vector3.right * this.cameraSpeed;
         }
     }
 }
