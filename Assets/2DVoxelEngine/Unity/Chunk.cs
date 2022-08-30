@@ -280,7 +280,7 @@ namespace Hazel.VoxelEngine2D.Unity
         private void BuildGameObject()
         {
             int chunkSize = VoxelEngine.ChunkSize;
-            this.gameObject = new GameObject($"Chunk_{this.Coord.x / chunkSize}_{this.Coord.y / chunkSize}");
+            this.gameObject = new GameObject($"Chunk_{this.Coord.x}_{this.Coord.y}");
             this.gameObject.transform.position = this.WorldPosition;
             this.meshRenderer = this.gameObject.AddComponent<MeshRenderer>();
             this.meshRenderer.material = this.material;

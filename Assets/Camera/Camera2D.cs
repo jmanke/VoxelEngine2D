@@ -13,21 +13,15 @@ public class Camera2D : MonoBehaviour
         this.Camera = this.GetComponent<Camera>();    
     }
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
     // Update is called once per frame
     void Update()
     {
+        var mousePosition = this.Camera.ScreenToWorldPoint(Input.mousePosition);
+
         if (Input.GetMouseButtonDown(0))
         {
-            var worldPoint = this.Camera.ScreenToWorldPoint(Input.mousePosition);
-
             // set to empty tile
-            VoxelEngine.Instance.UpdateVoxel(worldPoint, VoxelEngine.VoxelDefinitions[1]);
+            VoxelEngine.Instance.UpdateVoxel(mousePosition, VoxelEngine.VoxelDefinitions[1]);
         }
 
         if (Input.GetMouseButtonDown(1))
