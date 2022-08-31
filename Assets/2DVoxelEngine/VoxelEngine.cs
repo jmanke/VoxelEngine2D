@@ -9,10 +9,8 @@ namespace Hazel.VoxelEngine2D
     /// <summary>
     /// Entry point for the 2D voxel engine
     /// </summary>
-    public class VoxelEngine : MonoBehaviour
+    public class VoxelEngine : Singleton<VoxelEngine>
     {
-        public static VoxelEngine Instance { get; private set; }
-
         [Tooltip("Path to voxel json definition in a Resources folder")]
         public string voxelAssetPath = "VoxelEngine2D/voxels";
 
@@ -39,16 +37,9 @@ namespace Hazel.VoxelEngine2D
         public Transform extentTransform;
         private Vector2 lastExtentPosition;
 
-        public void Awake()
+        protected override void Awake()
         {
-            if (Instance != null)
-            {
-                Destroy(this.gameObject);
-                return;
-            }
-
-            Instance = this;
-            DontDestroyOnLoad(this.gameObject);
+            base.Awake();
             this.worldProfile = new WorldProfileData();
             ChunkSize = this.worldProfile.ChunkSize;
             this.LoadVoxelDefinitions();
